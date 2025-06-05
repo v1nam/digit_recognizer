@@ -1,51 +1,37 @@
-# from matplotlib import pyplot as plt
 import random
 
 def function(x):
     return x**2
 
 
-ips = list(range(-100, 100))
+sample_points = 200
+ips = []
+
+for k in range(0, sample_points):
+    ips.append(random.choice(range(-100, 100)))
+
 y = [function(i) for i in ips]
 
 
-# func(1, 3) -> [ r] (1x3)
+#(AB)ij = sum(a)
 
+def mat_mult(m1, m2):
+    m1r = len(m1)
+    m1c = len(m1[0])
 
-class Neuron:
-    value = 0
-    def __init__(self, inp=False):
-        self.bias =  random.uniform(-10, 10)
-        if inp:
-            self.value = ...
+    m2r = len(m2)
+    m2c = len(m2[0])
 
-    def update(self, new):
-        self.value = new
+    if m1c != m2r:
+        return "Matrices cannot be multiplied"
 
-class NeuralNetwork:
-    inp = 1
-    layers = [3, 1]
-    weights = []
-    neurons = [Neuron(inp=True) for i in inp] + [[Neuron() for n in range(layer)] for layer in layers]
-
-    def __init__(self):
-        for l in range(len(self.layers) - 1):
-            l1 = self.layers[l]
-            l2 = self.layers[l + 1]
-            
-            self.weights.append(
-                [[random.uniform(0, 1) for _ in range(l2)] for _ in range(l1)]
-            )
-
-    def activate(self):
-        for nl in self.neurons:
-            for neuron in nl:
-                new_value = 
-                neuron.update(new_value)
-
-nn = NeuralNetwork()
-
-#training
-for i, inp in enumerate(ips):
-    y1 = y[i]
+    prod = [[0 for _ in range(m2c)] for _ in range(m1r)]
     
+    for i in range(m1r):
+        for j in range(m2c):
+            prod[i][j] = sum(m1[i][c]*m2[c][j] for c in range(m1c))
+            
+    return prod
+
+p = mat_mult([[6, 5, 4], [2, 3, 1]], [[3, 3], [5, 6], [7, 8]])
+print(p)
