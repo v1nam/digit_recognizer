@@ -1,8 +1,8 @@
 import random
+import math
 
 def function(x):
     return x**2
-
 
 sample_points = 200
 ips = []
@@ -70,15 +70,26 @@ class NeuralNetwork:
             self.biases.append(Matrix(
                 [[random.uniform(-5, 5)] for _ in range(n2)]
                 ))
-            self.neurons.append(None)
+            self.neurons.append(Matrix(
+                [[0] for _ in range(n2)]
+            ))
 
-    
+    @staticmethod
+    def add_noise(m, percent):
+        new = Matrix(m.ls)
+        for i in range(m.rows):
+            for j in range(m.cols):
+                new.ls[i][j] += percent*m.ls[i][j]
+
+        return new
+                 
     
     @staticmethod
-    def RelU(m): # first activation function
+    def sigmoid(m): # first activation function
         m1 = m.ls
         for i in range(m.rows):
             for j in range(m.cols):
+                #m1[i][j] = 1 / (1 + math.exp(-m1[i][j]))
                 m1[i][j] = max(0, m1[i][j])
         return Matrix(m1)
     
@@ -86,7 +97,36 @@ class NeuralNetwork:
         i = 0
         l = [inp] + self.neurons[:-1] # l -> [inp, layer1, layer2, ...] but not the output layer
         for weight, bias in zip(self.weights, self.biases):
-            self.neurons[i] = self.RelU(weight * l[i] + bias)  # missing activation function
+            self.neurons[i] = self.sigmoid(weight * l[i] + bias)
             i += 1
 
-nn = NeuralNetwork([1, 3, 3, 1])
+amount = 10
+nns = [NeuralNetwork([1, 2, 1]) for _ in range(amount)]
+
+mc = [math.inf, 0]
+
+
+for _ in range(100):
+    for n in range(amount):
+        cost = 0
+        for i, inp in enumerate(ips):
+            nn = nns[n]
+            inpu = Matrix([[inp]])
+            nn.compute(inpu)
+            output = nn.neurons[-1]
+            cost += abs(y[i] - output.ls[0][0])
+            if cost < mc[0]:
+                mc[0] = cost
+                mc[1] = n
+
+    nns = [nns[n] for _ in range(100)]
+    for k in range(1, amount):
+        p = random.choice([-1, 1]) * k/4
+        for w in range(len(nns[k].weights)):
+            nns[k].weights[w] = nns[k].add_noise(nns[k].weights[w], p)
+        for b in range(len(nns[k].biases)):
+            nns[k].biases[b] = nns[k].add_noise(nns[k].biases[b], p)
+
+point = int(input("enter a point : "))
+nns[0].compute(Matrix([[point]]))
+print(nns[0].neurons[-1].ls[0][0])
