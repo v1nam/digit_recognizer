@@ -4,6 +4,11 @@ import time
 from copy import deepcopy
 from matplotlib import pyplot as plt
 
+amount = 40 # number of neural networks (we have "amount" number of neural networks) 
+iterat_amount = 400
+n1 = iterat_amount/4
+n2 = iterat_amount/2
+n3 = iterat_amount/1.5
 def function(x):
     return math.sin(x)
 
@@ -12,7 +17,7 @@ s, e = -4, 4
 ips = []
 
 for k in range(0, sample_points):
-    ips.append(random.uniform(s, e))
+    ips.append(s + (e-s)*(k/sample_points))
 
 y = [function(i) for i in ips]
 
@@ -59,12 +64,36 @@ class Matrix:
 
 # N1 = s(W * N0 + B)
 
-def add_noise(m):
+def add_noise_w(m, k):
     new = Matrix(m.ls)
     for i in range(m.rows):
         for j in range(m.cols):
-            if random.choice(range(2)) == 1:
-                new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 1)
+            if random.choice(range(10)) == 1: # 1/10 chance to mutate the weight
+                if k <= n1: 
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 1.7)
+                elif k <= n2: 
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 0.85)
+                elif k <= n3: 
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 0.5)
+                else:
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 0.1)
+
+    return new
+
+def add_noise_b(m, k): #taking number of iterations for dynamic mutations
+    new = Matrix(m.ls)
+    
+    for i in range(m.rows):
+        for j in range(m.cols):
+            if random.choice(range(10)) == 1:
+                if k <= n1:
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 1.4)
+                elif k <= n2:
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 1)
+                elif k <= n3:
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 0.8)
+                else:
+                    new.ls[i][j] += random.choice((-1, 1))*random.gauss(0, 0.5)
 
     return new
 
@@ -78,12 +107,12 @@ class NeuralNetwork:
             n1 = self.layers[i]
             n2 = self.layers[i+1]
             self.weights.append(Matrix(
-                [[random.uniform(-1.732, 1.732) 
+                [[random.uniform(-4.472, 4.472) 
                   for _ in range(n1)] for _ in range(n2)]
                 ))
             
             self.biases.append(Matrix(
-                [[random.uniform(-500, 500)] for _ in range(n2)]
+                [[random.uniform(-1, 1)] for _ in range(n2)]
                 ))
             self.neurons.append(Matrix(
                 [[0] for _ in range(n2)]
@@ -94,7 +123,7 @@ class NeuralNetwork:
         m1 = m.ls
         for i in range(m.rows):
             for j in range(m.cols):
-                #m1[i][j] = 1 / (1 + math.exp(-m1[i][j]))
+                # m1[i][j] = 1 / (1 + math.exp(-m1[i][j]))
                 m1[i][j] = max(0.01*m1[i][j], m1[i][j])
 
         return Matrix(m1)
@@ -109,15 +138,14 @@ class NeuralNetwork:
         return self.neurons[-1]
 
 
-amount = 40 # number of neural networks (we have "amount" number of neural networks) 
+
 nns = []
 for _ in range(amount):
-    v = NeuralNetwork([1, 3, 3, 3, 1])
+    v = NeuralNetwork([1, 10, 20, 10, 1])
     nns.append(v)
 
 mc = [math.inf, 0]
-for _ in range(1000): #number of evolutions
-    print("+"*100)
+for j in range(iterat_amount): #number of evolutions
     for n in range(amount):
         cost = 0
         nn = nns[n]
@@ -131,7 +159,7 @@ for _ in range(1000): #number of evolutions
             nns[0] = deepcopy(nn)
             mc[1] = n
     print("\n")
-    print(mc)
+    print(mc, j)
     print("-"*100)
     
     for k in range(1, amount):
@@ -139,12 +167,12 @@ for _ in range(1000): #number of evolutions
     
     for k in range(1, amount): #  going through all the neural networks to mutate them except the zeroeth one
         for w in range(len(nns[k].weights)):
-            nns[k].weights[w] = add_noise(nns[k].weights[w])
+            nns[k].weights[w] = add_noise_w(nns[k].weights[w], j)
         for b in range(len(nns[k].biases)):
-            nns[k].biases[b] = add_noise(nns[k].biases[b])
+            nns[k].biases[b] = add_noise_b(nns[k].biases[b], j)
     
     
-ips = [s + (i/sample_points)*(e - s) for i in range(sample_points)]
+ips = [s + (i/(sample_points*10))*(e - s) for i in range(sample_points*10)]
 plt.plot(ips, list(map(function, ips)))
-plt.plot(ips, list(map(lambda i: nns[0].compute(Matrix([[i]])), ips)))
+plt.plot(ips, list(map(lambda i: nns[0].compute(Matrix([[i]])).ls[0][0], ips)))
 plt.show()
